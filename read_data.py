@@ -6,7 +6,7 @@ import fnmatch
 import metpy
 import xarray as xr
 %matplotlib qt
-# %%
+# %% test
 
 
 def find(pattern, path):
