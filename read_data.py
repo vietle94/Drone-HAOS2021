@@ -5,6 +5,7 @@ import os
 import fnmatch
 import metpy
 import xarray as xr
+import pywt
 %matplotlib qt
 # %%
 
@@ -130,3 +131,52 @@ for (i, g), ax in zip(halo_wind.groupby('height_'), axes.flatten()):
     ax.plot(drone_denoise[(drone_denoise.alt < i + 10) & (drone_denoise.alt > i - 10)].windspeed,
             '+', label=i)
     ax.legend()
+
+# %%
+plt.plot(alt)
+alt
+temp = alt.copy()
+temp = temp.reset_index(drop=True)
+temp.index.values
+
+# %%
+
+
+def gaussian(x, s):
+    return 1./np.sqrt(2. * np.pi * s**2) * np.exp(-x**2 / (2. * s**2))
+
+
+gaus = np.array([gaussian(x, 3) for x in range(-7, 8, 1)])
+gaus = np.convolve(gaus, [-1, 0, 1], 'same')
+# coef = pywt.wavedec(np.convolve(temp, gaus, 'same'), 'haar', level=1)
+coef = pywt.wavedec(np.convolve(temp, gaus, 'same'), 'haar', level=1)
+recon = pywt.idwt(None, coef[i], 'haar')
+
+fig, ax = plt.subplots(len(coef) + 2, 1, figsize=(9, 6), sharex=True)
+ax[0].plot(temp)
+ax[3].plot(np.convolve(temp, gaus, 'same'))
+ax[1].plot(pywt.idwt(coef[0], None, 'haar'))
+for i in range(1, len(coef)):
+    ax[i+1].plot(pywt.idwt(None, coef[i], 'haar'))
+
+# temp2 = recon.copy()
+# temp2[np.abs(recon) < 0.5*np.std(recon)] = np.nan
+# ax[2].plot(temp2, '.')
+# ax[3].plot(temp[np.abs(recon) < 0.5*np.std(recon)], '.')
+
+# %%
+recon = pywt.idwt(None, coef[i], 'haar')
+plt.plot(pywt.threshold(recon, 0.75*np.std(recon), substitute=np.nan), '.')
+
+np.mean(coef[1])
+# %%
+
+gaus = np.array([gaussian(x, 7) for x in range(-51, 50, 1)])
+gaus = np.convolve(gaus, [-1, 0, 1], 'same')
+# coef = pywt.wavedec(np.convolve(temp, gaus, 'same'), 'haar', level=1)
+coef = np.convolve(temp, gaus, 'same')
+
+fig, ax = plt.subplots(2, 1, figsize=(9, 6), sharex=True)
+ax[0].plot(temp)
+ax[1].plot(coef)
+ax[0].plot(temp[np.abs(coef) < 0.3], '.')
