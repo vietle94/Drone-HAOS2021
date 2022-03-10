@@ -7,12 +7,20 @@ import matplotlib.pyplot as plt
 %matplotlib qt
 
 # %%
-df = preprocessing.read_data(r'D:\20220301\20220301/')
+date_ = '2022-03-01'
+data_path = r'C:\Users\le\OneDrive - Ilmatieteen laitos\My files\drone_backpack\Kumpula/' + \
+    date_.replace('-', '') + '/'
+df = preprocessing.read_data(data_path)
 df = df[df.index > pd.to_datetime('2022-03-01 10:30:00')]
 df = df.resample('1s').mean()
 df = df.dropna(how='all')
 
+# %%  Check outlier
+fig, ax = plt.subplots()
+ax.plot(df['P(hPa)_BME-BP5'], '.')
+
 # %%
+df = df[df['P(hPa)_BME-BP5'] > 800]
 df['altitude_calculated'] = 44331.5 - 4946.62 * \
     (df['P(hPa)_BME-BP5']*100) ** (0.190263)
 fill = df.fillna(method='bfill')
@@ -93,57 +101,50 @@ api_url = "https://smear-backend.rahtiapp.fi/search/timeseries/csv?" + \
     "&tablevariable=KUM_META.Tower_T_16m" + \
     "&tablevariable=KUM_META.rh" + \
     "&tablevariable=KUM_META.p" + \
-    "&from=2022-03-01T00%3A00%3A00.000" + \
-    "&to=2022-03-01T23%3A59%3A59.999" + \
+    "&from=" + date_ + "T00%3A00%3A00.000" + \
+    "&to=" + date_ + "T23%3A59%3A59.999" + \
     "&quality=ANY&aggregation=NONE&interval=1"
 
 # %%
 with requests.get(api_url) as response:
     name = 'smeardata' + \
         api_url.split('from=')[1].split('T')[0].replace('-', '') + '.csv'
-    with open(f'./{name}', 'wb') as f:
+    with open(data_path + f'Result/{name}', 'wb') as f:
         f.write(response.content)
         print(f'{name} was downloaded...')
 
 # %%
-data = pd.read_csv('smeardata20220301.csv')
+data = pd.read_csv(data_path + f'Result/{name}')
 data['Time'] = pd.to_datetime(data[['Year', 'Month', 'Day', 'Hour', 'Minute', 'Second']])
 data = data.drop(['Year', 'Month', 'Day', 'Hour', 'Minute', 'Second'], axis=1)
 data.columns = [x.split('.')[1] if '.' in x else x for x in data.columns]
 data.columns = [x + '_smear' if 'Time' not in x else x for x in data.columns]
 data = data.rename({'Time': 'datetime'}, axis='columns')
 
-processed_df = df[df['level'] != -1].set_index('datetime').resample('1T').mean().reset_index()
+# %%
+# fig, ax = plt.subplots(2, 1, sharex=True)
+# ax[0].plot(full_df['datetime'], full_df['altitude_calculated'])
+# ax[1].plot(df['datetime'], df['T(C)_BME-BP5'])
+# ax[1].plot(df['datetime'], df['T(C)_AHT10-BP5'])
+# ax[1].plot(full_df['datetime'], full_df['Tower_T_32m_smear'])
+# ax[1].plot(full_df['datetime'], full_df['Tower_T_16m_smear'])
 
 # %%
-full_df = processed_df.merge(data)
-
-# %%
-full_df.columns
-
-
-# %%
-fig, ax = plt.subplots()
-ax.plot(full_df['T(C)_AHT10-BP5'],
-        full_df['T(C)_BME-BP5'], '.')
-# %%
-fig, ax = plt.subplots(2, 1, sharex=True)
-ax[0].plot(full_df['datetime'], full_df['altitude_calculated'])
-ax[1].plot(df['datetime'], df['T(C)_BME-BP5'])
-ax[1].plot(df['datetime'], df['T(C)_AHT10-BP5'])
-ax[1].plot(full_df['datetime'], full_df['Tower_T_32m_smear'])
-ax[1].plot(full_df['datetime'], full_df['Tower_T_16m_smear'])
-
-# %%
-data_mean = {}
-data_std = {}
+df_mean = {}
+df_std = {}
 for i, grp in df.groupby(['level']):
     resamp = grp.set_index('datetime').resample('1T')
-    data_mean[i] = resamp.mean()
-    data_mean[i] = data_mean[i].dropna(how='all')
-    data_std[i] = resamp.std()
-    data_std[i] = data_std[i].dropna(how='all')
+    df_mean[i] = resamp.mean()
+    df_mean[i] = df_mean[i].dropna(how='all')
+    df_std[i] = resamp.std()
+    df_std[i] = df_std[i].dropna(how='all')
 
 # %%
-data_mean
-data_std
+for key, item in df_mean.items():
+    if key != -1:
+        save_df_mean = item.reset_index().merge(data)
+        save_df_std = df_std[key].reset_index().merge(data)
+        save_df_mean = save_df_mean.set_index(
+            'datetime').loc[save_df_std.set_index('datetime').index].reset_index()
+        save_df_mean.to_csv(data_path + 'Result/Mean_' + str(key) + '.csv', index=False)
+        save_df_std.to_csv(data_path + 'Result/Std_' + str(key) + '.csv', index=False)

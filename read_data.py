@@ -3,7 +3,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 import fnmatch
-import metpy
 import xarray as xr
 import pywt
 %matplotlib qt
@@ -20,8 +19,8 @@ def find(pattern, path):
 
 
 # %%
-file_list = find('Trisonica*', 'D:/HAOS2021/HAOS2021/TDrone_PTU_wind/250321')
-file_list2 = find('*BME*', 'D:/HAOS2021/HAOS2021/TDrone_PTU_wind/250321')
+file_list = find('Trisonica*', r'C:\Users\le\Downloads\HAOS2021\HAOS2021/TDrone_PTU_wind/250321')
+file_list2 = find('*BME*', r'C:\Users\le\Downloads\HAOS2021\HAOS2021/TDrone_PTU_wind/250321')
 
 # %%
 trisonica = pd.DataFrame()
