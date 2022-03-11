@@ -9,15 +9,21 @@ import datetime
 level = 2
 data_path = r'C:\Users\le\OneDrive - Ilmatieteen laitos\My files\drone_backpack\Kumpula/'
 df = pd.concat([pd.read_csv(x)
-                for x in glob.glob(data_path + '/**/Mean_' + str(level) + '.csv', recursive=True)])
+                for x in glob.glob(data_path + '/**/Mean_' + str(level) + '.csv', recursive=True)],
+               ignore_index=True)
 df_std = pd.concat([pd.read_csv(x) for x in glob.glob(
-    data_path + '/**/Std_' + str(level) + '.csv', recursive=True)])
+    data_path + '/**/Std_' + str(level) + '.csv', recursive=True)],
+    ignore_index=True)
 
 
 # %%
 df.columns
 
 # %%
+if level == 2:
+    t_smear = 'Tower_T_32m_smear'
+else:
+    t_smear = 'Tower_T_16m_smear'
 fig, ax = plt.subplots(3, 1, sharey=True, sharex=True, figsize=(16, 9))
 ax[0].errorbar(df['datetime'], df['T(C)_AHT10-BP5'], marker='.',
                fmt='--', elinewidth=1,
@@ -29,8 +35,8 @@ ax[2].errorbar(df['datetime'], df['TempdegC_OPC-BP5'], marker='.',
                fmt='--', elinewidth=1,
                yerr=df_std['TempdegC_OPC-BP5'], label='TempdegC_OPC-BP5')
 for ax_ in ax.flatten():
-    ax_.plot(df['datetime'], df['Tower_T_32m_smear'], '.',
-             label='Tower_T_32m_smear')
+    ax_.plot(df['datetime'], df[t_smear], '.',
+             label=t_smear)
     ax_.legend()
     ax_.tick_params(axis='x', labelrotation=45)
     ax_.set_ylabel('Temperature')
@@ -41,20 +47,20 @@ fig.savefig(r'C:\Users\le\OneDrive - Ilmatieteen laitos\My files\drone_backpack\
 
 # %%
 fig, ax = plt.subplots(1, 3, sharex=True, figsize=(16, 9))
-ax[0].plot(df['Tower_T_32m_smear'], df['T(C)_AHT10-BP5'], '.')
-ax[1].plot(df['Tower_T_32m_smear'], df['T(C)_BME-BP5'], '.')
-ax[2].plot(df['Tower_T_32m_smear'], df['TempdegC_OPC-BP5'], '.')
-for ax_ in ax.flatten():
+ax[0].plot(df[t_smear], df['T(C)_AHT10-BP5'], '.')
+ax[1].plot(df[t_smear], df['T(C)_BME-BP5'], '.')
+ax[2].plot(df[t_smear], df['TempdegC_OPC-BP5'], '.')
+for ax_, y_ in zip(ax.flatten(), [df['T(C)_AHT10-BP5'], df['T(C)_BME-BP5'], df['TempdegC_OPC-BP5']]):
     # ax_.set_xlim([2, 5])
     # ax_.set_ylim([2, 5])
     ax_.set_aspect('equal', 'box')
     ax_.axline((0, 0), (4, 4), color='grey', linewidth=0.5,
                ls='--')
-ax[0].set_xlabel('Tower_T_32m_smear')
+ax[0].set_xlabel(t_smear)
 ax[0].set_ylabel('T(C)_AHT10-BP5')
-ax[1].set_xlabel('Tower_T_32m_smear')
+ax[1].set_xlabel(t_smear)
 ax[1].set_ylabel('T(C)_BME-BP5')
-ax[2].set_xlabel('Tower_T_32m_smear')
+ax[2].set_xlabel(t_smear)
 ax[2].set_ylabel('TempdegC_OPC-BP5')
 fig.savefig(r'C:\Users\le\OneDrive - Ilmatieteen laitos\My files\drone_backpack\Kumpula\Summary/Temperature_compare_level' + str(level) + '.png')
 
