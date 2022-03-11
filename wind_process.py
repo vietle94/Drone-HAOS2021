@@ -1,3 +1,4 @@
+from sklearn.metrics import r2_score
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -73,6 +74,7 @@ ax.set_ylabel('Wind speed')
 fig.savefig(data_path + '/Result/wind_speed32_ts.png')
 
 # %%
+
 fig, ax = plt.subplots(figsize=(9, 6))
 ax.plot(mean32['Tower_WS_32m_smear'], mean32['Wind Speed (m/s)'], '.')
 ax.set_xlabel('Tower_WS_32m_smear')
@@ -80,4 +82,14 @@ ax.set_ylabel('Wind Speed (m/s)')
 ax.set_aspect('equal')
 ax.axline((np.min(mean32['Tower_WS_32m_smear']), np.min(mean32['Tower_WS_32m_smear'])), (5, 5), color='grey', linewidth=0.5,
           ls='--')
+
+z = np.polyfit(mean32['Tower_WS_32m_smear'],
+               mean32['Wind Speed (m/s)'], 1)
+y_hat = np.poly1d(z)(mean32['Tower_WS_32m_smear'])
+ax.plot(mean32['Tower_WS_32m_smear'], y_hat)
+text = f"$y={z[0]:0.3f}\;x{z[1]:+0.3f}$\n$R^2 = {r2_score(mean32['Wind Speed (m/s)'],y_hat):0.3f}$"
+ax.text(0.05, 0.95, text, transform=ax.transAxes,
+        fontsize=10, verticalalignment='top')
+
+
 fig.savefig(data_path + '/Result/wind_speed32_compare.png')
