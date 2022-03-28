@@ -63,3 +63,39 @@ for x, x_name in zip(file_path, file_names):
 # %%
 
 ref = pd.read_csv(base_dir + r'mavic_Matt\weather.csv')
+
+# %%
+df = pd.read_csv(
+    r'C:\Users\vietl\Downloads\Antarctica\Antarctica\mavic_Matt\mavic_profiles_gridded/mavic_profile_gridded_20211211_20.55.csv')
+weather = pd.read_csv(r'C:\Users\vietl\Downloads\Antarctica\Antarctica\mavic_Matt/weather.csv')
+
+# %%
+df.date_time = pd.to_datetime(df.date_time)
+weather.date_time = pd.to_datetime(weather.date_time)
+
+weather = weather[weather.date_time.dt.date == df['date_time'][0].date()]
+
+# %%
+df = df.set_index('date_time').resample('10s').median().reset_index()
+weather = weather.set_index('date_time').resample('10s').bfill().reset_index()
+
+temp = df.merge(weather, on='date_time')
+temp
+
+# %%
+fig, ax = plt.subplots(2, 1)
+ax[0].plot(temp.date_time, temp.press_bme)
+ax[0].plot(temp.date_time, temp.press_1m, '.')
+ax[1].plot(temp.date_time, temp.temp_bme)
+ax[1].plot(temp.date_time, temp.temp_1m, '.')
+# %%
+fig, ax = plt.subplots()
+ax.plot(temp.date_time, temp.press_1m - temp.press_bme)
+
+# %%
+temp[np.abs(temp.press_1m - temp.press_bme) < 0.2]
+
+# %%
+fig, ax = plt.subplots()
+ax.plot(temp.date_time, temp.temp_bme)
+ax.plot(temp.date_time, temp.temp_1m, '.')
