@@ -71,6 +71,7 @@ weather_full = weather_full.rename({'date_time': 'datetime'}, axis='columns')
 weather_full.datetime = pd.to_datetime(weather_full.datetime)
 
 # %%
+
 for file in glob.glob(base_dir + r'Viet\merged_wind/*.csv'):
     df_name = file.split('\\')[-1][:-4]
     df = pd.read_csv(file)
@@ -78,7 +79,7 @@ for file in glob.glob(base_dir + r'Viet\merged_wind/*.csv'):
     df[['datetime', 'press_bme']] = df[['datetime', 'press_bme']].set_index(
         'datetime').rolling('10s').median().reset_index()
     weather = weather_full[weather_full.datetime.dt.date == df['datetime'][0].date()]
-
+    weather = weather.set_index('datetime').resample('1S').bfill().reset_index()
     temp = df.merge(weather, on='datetime', how='left')
     temp[['Home Distance', 'Wind Direction',
           'Wind Speed']] = temp[['Home Distance', 'Wind Direction',
@@ -88,6 +89,9 @@ for file in glob.glob(base_dir + r'Viet\merged_wind/*.csv'):
           'voltage']] = temp[['wdir_3s', 'wdir_10m', 'rh_1m', 'press_1m', 'press_surf_1m', 'glob_rad',
                               'temp_1m', 'dewpoint', 'ws_3s', 'ws_10m', 'ws_gust',
                               'voltage']].fillna(method='backfill', limit=60)
+    i_min = np.argmin(temp.press_bme)
+    temp['ascend'] = True
+    temp.loc[i_min:, 'ascend'] = False
 
     intersec = temp[np.abs(temp.press_1m - temp.press_bme) < 0.3]
     intersec = intersec.reset_index(drop=True)
@@ -131,6 +135,7 @@ for file in glob.glob(base_dir + r'Viet\merged_wind/*.csv'):
 
 # %%
 ref.to_csv(base_dir + r'Viet\ref_compare.csv', index=False)
+# ref = ref[ref['ascend'] == False]
 
 # %%
 fig, ax = plt.subplots(3, 2, figsize=(16, 9))
@@ -182,20 +187,27 @@ for file in file_path:
     df['datetime'] = pd.to_datetime(df['datetime'])
     df[['datetime', 'press_bme']] = df[['datetime', 'press_bme']].set_index(
         'datetime').rolling('10s').median().reset_index()
-
-    temp = df.merge(weather_full, on='datetime', how='left')
+    df = df.reset_index()
+    weather = weather_full[weather_full.datetime.dt.date == df['datetime'][0].date()]
+    weather = weather.set_index('datetime').resample('1S').bfill().reset_index()
+    # temp = df.merge(weather_full, on='datetime', how='left')
+    temp = df.merge(weather, on='datetime', how='left')
     temp[['wdir_3s', 'wdir_10m', 'rh_1m', 'press_1m', 'press_surf_1m', 'glob_rad',
           'temp_1m', 'dewpoint', 'ws_3s', 'ws_10m', 'ws_gust',
           'voltage']] = temp[['wdir_3s', 'wdir_10m', 'rh_1m', 'press_1m', 'press_surf_1m', 'glob_rad',
                               'temp_1m', 'dewpoint', 'ws_3s', 'ws_10m', 'ws_gust',
                               'voltage']].fillna(method='backfill', limit=60)
+    i_min = np.argmin(temp.press_bme)
+    temp['ascend'] = True
+    temp.loc[i_min:, 'ascend'] = False
 
     intersec = temp[np.abs(temp.press_1m - temp.press_bme) < 0.3]
     intersec = intersec.reset_index(drop=True)
     ref = ref.append(intersec)
 
+
 # %%
-ref.columns
+# ref = ref[ref['ascend'] == False]
 
 # %%
 fig, ax = plt.subplots(2, 2, figsize=(16, 9))
