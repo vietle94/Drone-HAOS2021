@@ -81,8 +81,9 @@ df_full = df_full[df_full.datetime.dt.year != 1970]
 df_full = df_full.reset_index(drop=True)
 df_full = df_full[~pd.isnull(df_full['datetime'])]
 particle_size_colname = [x for x in df_full.columns if x.replace('.', '', 1).isdigit()]
+df_full['total_concentration'] = df_full.loc[:, particle_size_colname].sum(
+    axis=1, min_count=1) / 3.66666/1
 df_full.loc[:, particle_size_colname] = df_full.loc[:, particle_size_colname] / 3.66666/1/dlog_bin
-df_full['total_particle'] = df_full.loc[:, particle_size_colname].sum(axis=1, min_count=1)
 
 # %%
 for data_plot, plot_name in zip([df_full, df_full[df_full['ascend'] == True],
@@ -136,9 +137,9 @@ for i, grp in df_full.groupby(['flight_ID']):
         ax[2].plot(group.pm10, group.press_bme, '.',
                    label=preprocessing.ascend_label(type))
         ax[2].set_xlabel('PM10')
-        ax[3].plot(group.total_particle, group.press_bme, '.',
+        ax[3].plot(group.total_concentration, group.press_bme, '.',
                    label=preprocessing.ascend_label(type))
-        ax[3].set_xlabel('dN/dlogDp \nall particle sizes')
+        ax[3].set_xlabel('Total concentration')
     for ax_ in ax.flatten():
         ax_.grid()
         ax_.legend()
@@ -185,8 +186,8 @@ for i, grp in df_full.groupby(['flight_ID']):
     ax0.legend()
     ax0.set_xlim(left=0)
 
-    ax1.plot(grp_particle_plot.total_particle, grp_particle_plot.index)
-    ax1.set_xlabel('dN/dlogDp for all particle sizes')
+    ax1.plot(grp_particle_plot.total_concentration, grp_particle_plot.index)
+    ax1.set_xlabel('Total concentration')
 
     ax2.plot(grp_particle_plot.temp_bme, grp_particle_plot.index, label='temp_bme')
     ax2.plot(grp_particle_plot.temp_sht, grp_particle_plot.index, label='temp_sht')
