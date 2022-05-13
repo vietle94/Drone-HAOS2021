@@ -84,3 +84,10 @@ def level_detection(pressure):
 
     temp['level'] = temp['sub_level'].replace(level_replace)
     return temp['level']
+
+
+def ascend_label(x):
+    if x:
+        return 'ascending'
+    else:
+        return 'descending'
