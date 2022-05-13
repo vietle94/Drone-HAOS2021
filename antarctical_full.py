@@ -85,7 +85,9 @@ df_full['total_concentration'] = df_full.loc[:, particle_size_colname].sum(
     axis=1, min_count=1) / 3.66666/1
 df_full.loc[:, particle_size_colname] = df_full.loc[:, particle_size_colname] / 3.66666/1/dlog_bin
 
-# %%
+##########################################################
+# %% Compare bme and sht
+##########################################################
 for data_plot, plot_name in zip([df_full, df_full[df_full['ascend'] == True],
                                  df_full[df_full['ascend'] == False]],
                                 ['full', 'ascending', 'descending']):
@@ -118,10 +120,105 @@ for data_plot, plot_name in zip([df_full, df_full[df_full['ascend'] == True],
     fig.savefig(base_dir + '/Viet/summary_plots/bme_sht_' + plot_name + '.png', bbox_inches='tight')
     plt.close()
 
+##########################################################
+# %% Particles parameters
+##########################################################
+# for i, grp in df_full.groupby(['flight_ID']):
+#     grp = grp.reset_index(drop=True)
+#     grp[['datetime', 'press_bme']] = grp[['datetime', 'press_bme']].set_index(
+#         'datetime').rolling('10s').median().reset_index()
+#     fig, ax = plt.subplots(1, 4, figsize=(12, 6), sharey=True)
+#     for type, group in grp.groupby(grp.ascend):
+#         ax[0].plot(group.pm1, group.press_bme, '.',
+#                    label=preprocessing.ascend_label(type))
+#         ax[0].set_xlabel('PM1')
+#         ax[1].plot(group.pm25, group.press_bme, '.',
+#                    label=preprocessing.ascend_label(type))
+#         ax[1].set_xlabel('PM2.5')
+#         ax[2].plot(group.pm10, group.press_bme, '.',
+#                    label=preprocessing.ascend_label(type))
+#         ax[2].set_xlabel('PM10')
+#         ax[3].plot(group.total_concentration, group.press_bme, '.',
+#                    label=preprocessing.ascend_label(type))
+#         ax[3].set_xlabel('Total concentration')
+#     for ax_ in ax.flatten():
+#         ax_.grid()
+#         ax_.legend()
+#     ax[0].invert_yaxis()
+#     fig.savefig(base_dir + '/Viet/daily_plots/particle_ts_' +
+#                 str(grp.datetime.min()).replace(' ', '_').replace(':', '-') + '.png', bbox_inches='tight')
+#     plt.close()
+#     if (grp.shape[0] < 70) | (i == 33):
+#         print(i)
+#         continue
+#     # remove first couple of measurements
+#     grp_ = grp[grp.press_bme < (np.nanmax(grp.press_bme) - 1)].copy()
+#     grp_.loc[grp_['ascend'], 'temp_bme'] = np.nan
+#     grp_.loc[grp_['ascend'], 'temp_sht'] = np.nan
+#     grp_.loc[grp_['ascend'], 'rh_bme'] = np.nan
+#     grp_.loc[grp_['ascend'], 'rh_sht'] = np.nan
+#
+#     bin_width = 5
+#     lower_bin = grp_.press_bme.min() - grp_.press_bme.min() % bin_width
+#     bins = np.arange(lower_bin, grp_.press_bme.max()+bin_width, bin_width)
+#     labels = (bins[1:] + bins[:-1])/2
+#
+#     grp_particle_plot = grp_.copy()
+#     grp_particle_plot['p_binned'] = pd.cut(
+#         grp_['press_bme'], bins=bins, labels=labels, include_lowest=True)
+#
+#     grp_particle_plot.dropna(axis=0, how='all', inplace=True)
+#     grp_particle_plot = grp_particle_plot.reset_index(drop=True)
+#
+#     grp_particle_plot = grp_particle_plot.groupby('p_binned').mean()
+#
+#     fig1 = plt.figure(figsize=(16, 5))
+#     ax0 = fig1.add_subplot(161)
+#     ax1 = fig1.add_subplot(162, sharey=ax0)
+#     ax2 = fig1.add_subplot(163, sharey=ax0)
+#     ax3 = fig1.add_subplot(164, sharey=ax0)
+#     ax4 = fig1.add_subplot(133, sharey=ax0)
+#
+#     ax0.plot(grp_particle_plot.pm1, grp_particle_plot.index, label='PM1')
+#     ax0.plot(grp_particle_plot.pm25, grp_particle_plot.index, label='PM2.5')
+#     ax0.plot(grp_particle_plot.pm10, grp_particle_plot.index, label='PM10')
+#     ax0.set_ylabel('Pressure bme')
+#     ax0.set_xlabel('Mass concentration')
+#     ax0.legend()
+#     ax0.set_xlim(left=0)
+#
+#     ax1.plot(grp_particle_plot.total_concentration, grp_particle_plot.index)
+#     ax1.set_xlabel('Total concentration')
+#
+#     ax2.plot(grp_particle_plot.temp_bme, grp_particle_plot.index, label='temp_bme')
+#     ax2.plot(grp_particle_plot.temp_sht, grp_particle_plot.index, label='temp_sht')
+#     ax2.set_xlabel('Temperature (descending)')
+#     ax2.legend()
+#
+#     ax3.plot(grp_particle_plot.rh_bme, grp_particle_plot.index, label='rh_bme')
+#     ax3.plot(grp_particle_plot.rh_sht, grp_particle_plot.index, label='rh_sht')
+#     ax3.set_xlabel('RH (descending)')
+#     ax3.legend()
+#     for i_, ax_ in enumerate([ax0, ax1, ax2, ax3]):
+#         ax_.grid()
+#         if i_ != 0:
+#             plt.setp(ax_.get_yticklabels(), visible=False)
+#     p = ax4.pcolormesh(np.arange(len(particle_size_colname)), labels,
+#                        grp_particle_plot.loc[:, particle_size_colname])
+#     cbar = fig1.colorbar(p, ax=ax4)
+#     cbar.ax.set_ylabel('dN/dlogDp')
+#     ax4.set_xlabel('Particle size')
+#     plt.setp(ax4.get_yticklabels(), visible=False)
+#
+#     ax4.set_xticks((np.arange(len(particle_size_colname)) + 0.5)[::2])
+#     ax0.invert_yaxis()
+#     fig1.savefig(base_dir + '/Viet/daily_plots/particle_profile_' +
+#                  str(grp.datetime.min()).replace(' ', '_').replace(':', '-') + '.png', bbox_inches='tight')
+#     plt.close('all')
 
-# %%
-ref = pd.DataFrame({})
-ref_wind = pd.DataFrame({})
+##########################################################
+# %% Particles parameters
+##########################################################
 for i, grp in df_full.groupby(['flight_ID']):
     grp = grp.reset_index(drop=True)
     grp[['datetime', 'press_bme']] = grp[['datetime', 'press_bme']].set_index(
@@ -150,119 +247,125 @@ for i, grp in df_full.groupby(['flight_ID']):
     if (grp.shape[0] < 70) | (i == 33):
         print(i)
         continue
-    # fig1, ax = plt.subplots(1, 4, figsize=(12, 6))
     # remove first couple of measurements
-    grp_ = grp[grp.press_bme < (np.nanmax(grp.press_bme) - 1)]
-
+    grp_rm1hpa = grp[grp.press_bme < (np.nanmax(grp.press_bme) - 1)].copy()
     bin_width = 5
-    lower_bin = grp_.press_bme.min() - grp_.press_bme.min() % bin_width
-    bins = np.arange(lower_bin, grp_.press_bme.max()+bin_width, bin_width)
+    lower_bin = grp_rm1hpa.press_bme.min() - grp_rm1hpa.press_bme.min() % bin_width
+    bins = np.arange(lower_bin, grp_rm1hpa.press_bme.max()+bin_width, bin_width)
     labels = (bins[1:] + bins[:-1])/2
+    fig1, ax = plt.subplots(3, 5, figsize=(16, 9), sharex='col', sharey='row')
 
-    # grp_particle_plot = grp_.iloc[:, 9:28].copy()
-    grp_particle_plot = grp_.copy()
-    grp_particle_plot['p_binned'] = pd.cut(
-        grp_['press_bme'], bins=bins, labels=labels, include_lowest=True)
+    for grp_, flight_label, ax_ in zip([grp_rm1hpa.loc[grp_rm1hpa['ascend']], grp_rm1hpa.loc[~grp_rm1hpa['ascend']],
+                                        grp_rm1hpa], ['ASCEND', 'DESCEND', 'ASCEND + DESCEND'],
+                                       ax):
 
-    grp_particle_plot.dropna(axis=0, how='all', inplace=True)
-    grp_particle_plot = grp_particle_plot.reset_index(drop=True)
+        grp_particle_plot = grp_.copy()
+        grp_particle_plot['p_binned'] = pd.cut(
+            grp_['press_bme'], bins=bins, labels=labels, include_lowest=True)
 
-    grp_particle_plot = grp_particle_plot.groupby('p_binned').mean()
+        grp_particle_plot.dropna(axis=0, how='all', inplace=True)
+        grp_particle_plot = grp_particle_plot.reset_index(drop=True)
 
-    # pm_plot = grp_particle_plot.iloc[:, -3:].copy()
-    # pm_plot = pm_plot.reset_index()
-    fig1 = plt.figure(figsize=(16, 5))
-    ax0 = fig1.add_subplot(161)
-    ax1 = fig1.add_subplot(162, sharey=ax0)
-    ax2 = fig1.add_subplot(163, sharey=ax0)
-    ax3 = fig1.add_subplot(164, sharey=ax0)
-    ax4 = fig1.add_subplot(133, sharey=ax0)
+        grp_particle_plot = grp_particle_plot.groupby('p_binned').mean()
 
-    ax0.plot(grp_particle_plot.pm1, grp_particle_plot.index, label='PM1')
-    ax0.plot(grp_particle_plot.pm25, grp_particle_plot.index, label='PM2.5')
-    ax0.plot(grp_particle_plot.pm10, grp_particle_plot.index, label='PM10')
-    ax0.set_ylabel('Pressure bme')
-    ax0.set_xlabel('Mass concentration')
-    ax0.legend()
-    ax0.set_xlim(left=0)
+        ax_[0].plot(grp_particle_plot.pm1, grp_particle_plot.index, label='PM1')
+        ax_[0].plot(grp_particle_plot.pm25, grp_particle_plot.index, label='PM2.5')
+        ax_[0].plot(grp_particle_plot.pm10, grp_particle_plot.index, label='PM10')
+        ax_[0].set_ylabel(flight_label + '\nPressure bme')
+        # ax_[0].set_xlabel('Mass concentration')
+        ax_[0].legend()
+        # ax_[0].set_xlim(left=0)
 
-    ax1.plot(grp_particle_plot.total_concentration, grp_particle_plot.index)
-    ax1.set_xlabel('Total concentration')
+        ax_[1].plot(grp_particle_plot.total_concentration, grp_particle_plot.index)
+        # ax_[1].set_xlabel('Total concentration')
 
-    ax2.plot(grp_particle_plot.temp_bme, grp_particle_plot.index, label='temp_bme')
-    ax2.plot(grp_particle_plot.temp_sht, grp_particle_plot.index, label='temp_sht')
-    ax2.set_xlabel('Temperature')
-    ax2.legend()
+        ax_[2].plot(grp_particle_plot.temp_bme, grp_particle_plot.index, label='temp_bme')
+        ax_[2].plot(grp_particle_plot.temp_sht, grp_particle_plot.index, label='temp_sht')
+        # ax_[2].set_xlabel('Temperature')
+        ax_[2].legend()
 
-    ax3.plot(grp_particle_plot.rh_bme, grp_particle_plot.index, label='rh_bme')
-    ax3.plot(grp_particle_plot.rh_sht, grp_particle_plot.index, label='rh_sht')
-    ax3.set_xlabel('RH')
-    ax3.legend()
-    for i_, ax_ in enumerate([ax0, ax1, ax2, ax3]):
-        ax_.grid()
-        if i_ != 0:
-            plt.setp(ax_.get_yticklabels(), visible=False)
-    p = ax4.pcolormesh(np.arange(len(particle_size_colname)), labels,
-                       grp_particle_plot.loc[:, particle_size_colname])
-    cbar = fig1.colorbar(p, ax=ax4)
-    cbar.ax.set_ylabel('dN/dlogDp')
-    ax4.set_xlabel('Particle size')
-    # ax4.set_ylabel('Pressure')
-    # ax4.set_xticklabels(particle_size_colname[::2])
-    plt.setp(ax4.get_yticklabels(), visible=False)
+        ax_[3].plot(grp_particle_plot.rh_bme, grp_particle_plot.index, label='rh_bme')
+        ax_[3].plot(grp_particle_plot.rh_sht, grp_particle_plot.index, label='rh_sht')
+        # ax_[3].set_xlabel('RH')
+        ax_[3].legend()
+        for i_, ax__ in enumerate(ax_):
+            ax__.grid()
+            # if i_ != 0:
+            #     plt.setp(ax_.get_yticklabels(), visible=False)
+        p = ax_[4].pcolormesh(np.arange(len(particle_size_colname)), labels,
+                              grp_particle_plot.loc[:, particle_size_colname])
+        cbar = fig1.colorbar(p, ax=ax_[4])
+        cbar.ax.set_ylabel('dN/dlogDp')
+        ax_[4].set_xlabel('Particle size')
+        plt.setp(ax_[4].get_yticklabels(), visible=False)
 
-    ax4.set_xticks((np.arange(len(particle_size_colname)) + 0.5)[::2])
-    ax0.invert_yaxis()
-    # ax4.invert_yaxis()
+        ax_[4].set_xticks((np.arange(len(particle_size_colname)) + 0.5)[::2])
+        ax_[0].invert_yaxis()
+    ax_[0].set_xlabel('Mass concentration')
+    ax_[1].set_xlabel('Total concentration')
+    ax_[2].set_xlabel('Temperature')
+    ax_[3].set_xlabel('RH')
+    ax_[4].set_xlabel('Particle size')
     fig1.savefig(base_dir + '/Viet/daily_plots/particle_profile_' +
                  str(grp.datetime.min()).replace(' ', '_').replace(':', '-') + '.png', bbox_inches='tight')
+    plt.close('all')
 
-    # fig2, ax = plt.subplots(3, 2, figsize=(16, 9), sharex=True)
-    # ax[0, 0].plot(grp.datetime, grp.press_bme, '.', label='press_bme')
-    # ax[0, 0].plot(grp.datetime, grp.press_1m, '.', label='press_1m_tower')
-    # ax[0, 0].set_ylabel('Pressure [hPa]')
-    #
-    # ax[0, 1].plot(grp.datetime, grp.Altitude, '.', label='Drone Altitude from wind')
-    # ax[0, 1].set_ylabel('Altitude [m]')
-    #
-    # ax[1, 0].plot(grp.datetime, grp.temp_bme, '.', label='temp_bme')
-    # ax[1, 0].plot(grp.datetime, grp.temp_sht, '.', label='temp_sht')
-    # ax[1, 0].plot(grp.datetime, grp.temp_1m, '.', label='temp_1m_tower')
-    # ax[1, 0].set_ylabel('Temperature [$^0C$]')
-    #
-    # ax[1, 1].plot(grp.datetime, grp.rh_bme, '.', label='rh_bme')
-    # ax[1, 1].plot(grp.datetime, grp.rh_sht, '.', label='rh_sht')
-    # ax[1, 1].plot(grp.datetime, grp.rh_1m, '.', label='rh_1m_tower')
-    # ax[1, 1].set_ylabel('Relative humidity [%]')
-    #
-    # ax[2, 0].plot(grp.datetime, grp['Wind Speed'], '.', label='Wind speed')
-    # ax[2, 0].plot(grp.datetime, grp['ws_3s'], '.', label='wind_3s_tower')
-    # ax[2, 0].set_ylabel('Wind Speed [m/s]')
-    #
-    # ax[2, 1].plot(grp.datetime, grp['Wind Direction'], '.', label='Wind direction')
-    # ax[2, 1].plot(grp.datetime, grp['wdir_3s'], '.', label='wind_direction_3s_tower')
-    # ax[2, 1].set_ylabel('Wind direction [$^0$]')
-    #
-    # for ax_ in ax.flatten():
-    #     ax_.legend()
-    #     ax_.grid()
-    #
-    # thres_pressure = 0.5
-    # grp['compare_tower_others'] = np.abs(grp.press_1m - grp.press_bme) < thres_pressure
-    # grp['compare_tower_wind'] = np.abs((grp.press_1m - 0.7) - grp.press_bme) < thres_pressure
-    # ref = ref.append(grp[grp['compare_tower_others'] == True], ignore_index=True)
-    # ref_wind = ref_wind.append(grp[grp['compare_tower_wind'] == True],
-    #                            ignore_index=True)
-    #
-    # for vline in grp[grp['compare_tower_others']].datetime:
-    #     for ax_ in ax.flatten()[:-2]:
-    #         ax_.axvline(x=vline, alpha=0.2)
-    # for vline in grp[grp['compare_tower_wind']].datetime:
-    #     for ax_ in ax.flatten()[-2:]:
-    #         ax_.axvline(x=vline, alpha=0.2, c='orange')
-    # fig2.savefig(base_dir + '/Viet/daily_plots/daily_' +
-    #              str(grp.datetime.min()).replace(' ', '_').replace(':', '-') + '.png', bbox_inches='tight')
-    # print(str(grp.datetime.min()).replace(' ', '_').replace(':', '-'))
+
+#####################################################################
+# %% Meteorological parameters
+#####################################################################
+ref = pd.DataFrame({})
+ref_wind = pd.DataFrame({})
+for i, grp in df_full.groupby(['flight_ID']):
+    grp = grp.reset_index(drop=True)
+    grp[['datetime', 'press_bme']] = grp[['datetime', 'press_bme']].set_index(
+        'datetime').rolling('10s').median().reset_index()
+    fig2, ax = plt.subplots(3, 2, figsize=(16, 9), sharex=True)
+    ax[0, 0].plot(grp.datetime, grp.press_bme, '.', label='press_bme')
+    ax[0, 0].plot(grp.datetime, grp.press_1m, '.', label='press_1m_tower')
+    ax[0, 0].set_ylabel('Pressure [hPa]')
+
+    ax[0, 1].plot(grp.datetime, grp.Altitude, '.', label='Drone Altitude from wind')
+    ax[0, 1].set_ylabel('Altitude [m]')
+
+    ax[1, 0].plot(grp.datetime, grp.temp_bme, '.', label='temp_bme')
+    ax[1, 0].plot(grp.datetime, grp.temp_sht, '.', label='temp_sht')
+    ax[1, 0].plot(grp.datetime, grp.temp_1m, '.', label='temp_1m_tower')
+    ax[1, 0].set_ylabel('Temperature [$^0C$]')
+
+    ax[1, 1].plot(grp.datetime, grp.rh_bme, '.', label='rh_bme')
+    ax[1, 1].plot(grp.datetime, grp.rh_sht, '.', label='rh_sht')
+    ax[1, 1].plot(grp.datetime, grp.rh_1m, '.', label='rh_1m_tower')
+    ax[1, 1].set_ylabel('Relative humidity [%]')
+
+    ax[2, 0].plot(grp.datetime, grp['Wind Speed'], '.', label='Wind speed')
+    ax[2, 0].plot(grp.datetime, grp['ws_3s'], '.', label='wind_3s_tower')
+    ax[2, 0].set_ylabel('Wind Speed [m/s]')
+
+    ax[2, 1].plot(grp.datetime, grp['Wind Direction'], '.', label='Wind direction')
+    ax[2, 1].plot(grp.datetime, grp['wdir_3s'], '.', label='wind_direction_3s_tower')
+    ax[2, 1].set_ylabel('Wind direction [$^0$]')
+
+    for ax_ in ax.flatten():
+        ax_.legend()
+        ax_.grid()
+
+    thres_pressure = 0.5
+    grp['compare_tower_others'] = np.abs(grp.press_1m - grp.press_bme) < thres_pressure
+    grp['compare_tower_wind'] = np.abs((grp.press_1m - 0.7) - grp.press_bme) < thres_pressure
+    ref = ref.append(grp[grp['compare_tower_others'] == True], ignore_index=True)
+    ref_wind = ref_wind.append(grp[grp['compare_tower_wind'] == True],
+                               ignore_index=True)
+
+    for vline in grp[grp['compare_tower_others']].datetime:
+        for ax_ in ax.flatten()[:-2]:
+            ax_.axvline(x=vline, alpha=0.2)
+    for vline in grp[grp['compare_tower_wind']].datetime:
+        for ax_ in ax.flatten()[-2:]:
+            ax_.axvline(x=vline, alpha=0.2, c='orange')
+    fig2.savefig(base_dir + '/Viet/daily_plots/daily_' +
+                 str(grp.datetime.min()).replace(' ', '_').replace(':', '-') + '.png', bbox_inches='tight')
+    print(str(grp.datetime.min()).replace(' ', '_').replace(':', '-'))
     plt.close('all')
 
 
